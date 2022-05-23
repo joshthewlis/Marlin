@@ -1,9 +1,9 @@
-# Contains code from: https://github.com/mriscoc/Marlin_Ender3v2/blob/42585074807fa799bdee7ced10c9d83508df6ebf/slicer%20scripts/cura/CreateJPEGThumbnail.py
+# Contains code from: https://github.com/mriscoc/Ender3V2S1/blob/Ender3V2S1-Released/slicer%20scripts/cura/CreateJPEGThumbnail.py
 import base64
 
 from UM.Logger import Logger
 from cura.Snapshot import Snapshot
-from PyQt5.QtCore import QByteArray, QIODevice, QBuffer
+from cura.CuraVersion import CuraVersion
 
 from ..Script import Script
 
@@ -20,10 +20,26 @@ class Cura_JPEG_Preview(Script):
             Logger.logException("w", "Failed to create snapshot image")
 
     def _encodeSnapshot(self, snapshot, quality):
+        major = 0
+        minor = 0
+        try:
+            major = int(CuraVersion.split(".")[0])
+            minor = int(CuraVersion.split(".")[1])
+        except Exception:
+            pass
+
+        if major < 5:
+            from PyQt5.QtCore import QByteArray, QIODevice, QBuffer
+        else:
+            from PyQt6.QtCore import QByteArray, QIODevice, QBuffer
+
         Logger.log("d", "Encoding thumbnail image...")
         try:
             thumbnail_buffer = QBuffer()
-            thumbnail_buffer.open(QBuffer.ReadWrite)
+            if major < 5:
+                thumbnail_buffer.open(QBuffer.ReadWrite)
+            else:
+                thumbnail_buffer.open(QBuffer.OpenModeFlag.ReadWrite)
             thumbnail_image = snapshot
             thumbnail_image.save(thumbnail_buffer, "JPG", quality)
             base64_bytes = base64.b64encode(thumbnail_buffer.data())
